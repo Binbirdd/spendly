@@ -581,12 +581,14 @@ const CATS = {
   'Education':       { emoji: '📚', color: '#ffb74d', dim: 'rgba(255,183,77,0.15)' },
   'Personal care':   { emoji: '💆', color: '#f06292', dim: 'rgba(240,98,146,0.15)' },
   'Income':          { emoji: '💰', color: '#c8f565', dim: 'rgba(200,245,101,0.15)' },
+  'Transfers':       { emoji: '🔄', color: '#64b5f6', dim: 'rgba(100,181,246,0.15)' },
   'Other':           { emoji: '📦', color: '#555', dim: 'rgba(85,85,85,0.15)' },
 };
 const CAT_NAMES = Object.keys(CATS);
 
 // ─── SMART AI CATEGORISER ─────────────────────────────────────────────────────
 const RULES = [
+  { cat: 'Transfers', kw: ['transfer debit','transfer to','transfer from','inter-account','own transfer','account transfer','tfr to','tfr from','internet transfer to','internet transfer from'] },
   { cat: 'Groceries', kw: ['woolworths','coles','aldi','iga','foodland','harris farm','costco','fruit','butcher','bakery','supermarket','fresh'] },
   { cat: 'Dining out', kw: ['mcdonald','hungry jack','kfc','subway','domino','pizza','grill\'d','nando','uber eat','deliveroo','doordash','menulog','cafe','restaurant','bar ','bistro','thai','sushi','ramen','burger','burrito','kebab','chinese','indian','italian','japanese','korean'] },
   { cat: 'Transport', kw: ['opal','myki','go card','translink','bus','train','tram','taxi','uber','ola ','didi','lyft','ampol','bp ','shell','caltex','7-eleven fuel','petrol','parking','wilson park','care park','service station'] },
@@ -663,7 +665,7 @@ function parseCSV(text) {
         learned: !!DB.learned[merchant.toLowerCase()],
       });
     }
-    return rows.filter(r => r.isDebit);
+    return rows.filter(r => r.isDebit || r.category === 'Transfers');
   }
 
   // ── Generic / other banks ──
@@ -879,7 +881,9 @@ function filterByPeriod(txns, period) {
 let barChartInst = null;
 
 function renderDashboard() {
-  const txns = filterByPeriod(DB.transactions, currentPeriod);
+  const allPeriod = filterByPeriod(DB.transactions, currentPeriod);
+  // Exclude transfers and income from spending calculations
+  const txns = allPeriod.filter(t => t.category !== 'Transfers' && t.category !== 'Income');
   const total = txns.reduce((s, t) => s + t.amount, 0);
   const count = txns.length;
 
@@ -936,7 +940,7 @@ function renderCatBreakdown(txns) {
 }
 
 function renderBarChart() {
-  const allTxns = DB.transactions;
+  const allTxns = DB.transactions.filter(t => t.category !== 'Transfers' && t.category !== 'Income');
   if (!allTxns.length) { if (barChartInst) { barChartInst.destroy(); barChartInst = null; } return; }
 
   // Group by month
