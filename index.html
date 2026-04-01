@@ -331,9 +331,9 @@
       <div class="metric-change" id="m-change">No data yet</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label">Transactions</div>
-      <div class="metric-value large" id="m-count">0</div>
-      <div class="metric-change" id="m-avg">avg $0 each</div>
+      <div class="metric-label">Income</div>
+      <div class="metric-value large" id="m-count">$0</div>
+      <div class="metric-change" id="m-avg">this period</div>
     </div>
   </div>
 
@@ -934,9 +934,11 @@ function renderDashboard() {
   const total = expenses.reduce((s, t) => s + t.amount, 0);
   const count = expenses.length;
 
+  const income = allPeriod.filter(t => t.category === 'Income').reduce((s, t) => s + t.amount, 0);
+
   document.getElementById('m-total').textContent = fmt(total);
-  document.getElementById('m-count').textContent = count;
-  document.getElementById('m-avg').textContent = count ? `avg ${fmt(total/count)} each` : 'no transactions';
+  document.getElementById('m-count').textContent = fmt(income);
+  document.getElementById('m-avg').textContent = income ? `this period` : 'no income recorded';
 
   // Build subtitle
   const latestDate = DB.transactions.length
