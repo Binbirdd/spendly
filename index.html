@@ -324,6 +324,10 @@
     <div class="period-tab" onclick="setPeriod('all',this)">All time</div>
   </div>
 
+  <div id="monthPickerWrap" style="display:none; margin-bottom:14px; overflow-x:auto; -webkit-overflow-scrolling:touch;">
+    <div id="monthPicker" style="display:flex; gap:8px; padding-bottom:4px;"></div>
+  </div>
+
   <div class="metric-grid">
     <div class="metric-card accent">
       <div class="metric-label">Total spent</div>
@@ -897,15 +901,66 @@ function setPeriod(p, btn) {
   renderDashboard();
 }
 
+let selectedMonth = null; // format: "YYYY-MM"
+
+function setPeriod(p, btn) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  if (p === 'month') {
+    renderMonthPicker();
+    document.getElementById('monthPickerWrap').style.display = '';
+  } else {
+    document.getElementById('monthPickerWrap').style.display = 'none';
+    selectedMonth = null;
+  }
+  renderDashboard();
+}
+
+function renderMonthPicker() {
+  // Get all unique months from data, sorted newest first
+  const monthSet = new Set(DB.transactions.map(t => t.date.substring(0, 7)));
+  const months = [...monthSet].sort().reverse();
+
+  // Default to most recent month if none selected
+  if (!selectedMonth && months.length) selectedMonth = months[0];
+
+  document.getElementById('monthPicker').innerHTML = months.map(m => {
+    const [y, mo] = m.split('-');
+    const label = new Date(y, mo - 1).toLocaleString('default', { month: 'short', year: '2-digit' });
+    const isActive = m === selectedMonth;
+    return `<div onclick="selectMonth('${m}')" style="
+      flex-shrink:0; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      cursor: pointer; white-space: nowrap; transition: all 0.15s;
+      background: ${isActive ? 'var(--accent)' : 'var(--bg3)'};
+      color: ${isActive ? '#0a0a0a' : 'var(--text2)'};
+      border: 0.5px solid ${isActive ? 'var(--accent)' : 'var(--border)'};
+    ">${label}</div>`;
+  }).join('');
+}
+
+function selectMonth(m) {
+  selectedMonth = m;
+  renderMonthPicker();
+  renderDashboard();
+}
+
 function filterByPeriod(txns, period) {
   const now = new Date();
+
+  if (period === 'month' && selectedMonth) {
+    const [y, mo] = selectedMonth.split('-').map(Number);
+    return txns.filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === y && d.getMonth() === mo - 1;
+    });
+  }
 
   // Find the most recent date in the data
   const latestDate = txns.length
     ? new Date(txns.reduce((latest, t) => t.date > latest ? t.date : latest, txns[0].date))
     : now;
-
-  // Use whichever is more recent — today or the latest transaction date
   const ref = latestDate > now ? now : latestDate;
 
   return txns.filter(t => {
@@ -913,9 +968,6 @@ function filterByPeriod(txns, period) {
     if (period === 'week') {
       const weekAgo = new Date(ref); weekAgo.setDate(ref.getDate() - 7);
       return d >= weekAgo && d <= ref;
-    }
-    if (period === 'month') {
-      return d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear();
     }
     if (period === 'year') {
       return d.getFullYear() === ref.getFullYear();
@@ -941,13 +993,19 @@ function renderDashboard() {
   document.getElementById('m-avg').textContent = income ? `this period` : 'no income recorded';
 
   // Build subtitle
-  const latestDate = DB.transactions.length
-    ? new Date(DB.transactions.reduce((l, t) => t.date > l ? t.date : l, DB.transactions[0].date))
-    : new Date();
-  const refDate = latestDate > new Date() ? new Date() : latestDate;
-  const monthName = refDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-  const subtitles = { week: 'Last 7 days', month: monthName, year: `Year ${refDate.getFullYear()}`, all: 'All time' };
-  document.getElementById('dashSubtitle').textContent = subtitles[currentPeriod] || '';
+  let periodLabel = '';
+  if (currentPeriod === 'month' && selectedMonth) {
+    const [y, mo] = selectedMonth.split('-');
+    periodLabel = new Date(y, mo - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+  } else {
+    const latestDate = DB.transactions.length
+      ? new Date(DB.transactions.reduce((l, t) => t.date > l ? t.date : l, DB.transactions[0].date))
+      : new Date();
+    const refDate = latestDate > new Date() ? new Date() : latestDate;
+    const subtitles = { week: 'Last 7 days', year: `Year ${refDate.getFullYear()}`, all: 'All time' };
+    periodLabel = subtitles[currentPeriod] || '';
+  }
+  document.getElementById('dashSubtitle').textContent = periodLabel;
 
   if (allPeriod.length) {
     // Biggest expense
