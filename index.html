@@ -867,17 +867,26 @@ function setPeriod(p, btn) {
 
 function filterByPeriod(txns, period) {
   const now = new Date();
+
+  // Find the most recent date in the data
+  const latestDate = txns.length
+    ? new Date(txns.reduce((latest, t) => t.date > latest ? t.date : latest, txns[0].date))
+    : now;
+
+  // Use whichever is more recent — today or the latest transaction date
+  const ref = latestDate > now ? now : latestDate;
+
   return txns.filter(t => {
     const d = new Date(t.date);
     if (period === 'week') {
-      const weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
-      return d >= weekAgo;
+      const weekAgo = new Date(ref); weekAgo.setDate(ref.getDate() - 7);
+      return d >= weekAgo && d <= ref;
     }
     if (period === 'month') {
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      return d.getMonth() === ref.getMonth() && d.getFullYear() === ref.getFullYear();
     }
     if (period === 'year') {
-      return d.getFullYear() === now.getFullYear();
+      return d.getFullYear() === ref.getFullYear();
     }
     return true;
   });
@@ -897,8 +906,14 @@ function renderDashboard() {
   document.getElementById('m-count').textContent = count;
   document.getElementById('m-avg').textContent = count ? `avg ${fmt(total/count)} each` : 'no transactions';
 
-  const labels = { week: 'This week', month: 'This month', year: 'This year', all: 'All time' };
-  document.getElementById('dashSubtitle').textContent = labels[currentPeriod] || '';
+  // Build a helpful subtitle showing actual period
+  const latestDate = DB.transactions.length
+    ? new Date(DB.transactions.reduce((l, t) => t.date > l ? t.date : l, DB.transactions[0].date))
+    : new Date();
+  const refDate = latestDate > new Date() ? new Date() : latestDate;
+  const monthName = refDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+  const subtitles = { week: 'Last 7 days', month: monthName, year: `Year ${refDate.getFullYear()}`, all: 'All time' };
+  document.getElementById('dashSubtitle').textContent = subtitles[currentPeriod] || '';
 
   if (txns.length) {
     const sorted = [...txns].sort((a,b) => b.amount - a.amount);
