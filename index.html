@@ -1428,15 +1428,21 @@ function openTxnSheet(id) {
 function closeTxnSheet(e) {
   if (!e || e.target === document.getElementById('txnSheet')) {
     document.getElementById('txnSheet').classList.remove('open');
+    if (sheetOpenedFromCat) {
+      const returnCat = sheetOpenedFromCat;
+      sheetOpenedFromCat = null;
+      setTimeout(() => openCatSheet(returnCat), 200);
+    }
   }
 }
+
+let sheetOpenedFromCat = null;
 
 function saveCategoryChange() {
   const newCat = document.getElementById('sheetCatSelect').value;
   const t = DB.transactions.find(x => x.id === sheetTxnId);
   if (!t) return;
 
-  const oldCat = t.category;
   t.category = newCat;
   t.learned = true;
 
@@ -1451,11 +1457,20 @@ function saveCategoryChange() {
 
   DB.save();
   document.getElementById('sheetLearnNote').textContent = '✦ Saved! I\'ll remember this for ' + t.merchant;
-  renderDashboard();
-  renderTransactions();
-  renderInsights();
-  renderSettings();
   showToast(`✓ Learned: ${t.merchant} → ${newCat}`);
+
+  // If opened from a category sheet, go back to it (refreshed) instead of dashboard
+  if (sheetOpenedFromCat) {
+    const returnCat = sheetOpenedFromCat;
+    sheetOpenedFromCat = null;
+    document.getElementById('txnSheet').classList.remove('open');
+    setTimeout(() => openCatSheet(returnCat), 200);
+  } else {
+    renderDashboard();
+    renderTransactions();
+    renderInsights();
+    renderSettings();
+  }
 }
 
 // ─── INSIGHTS ─────────────────────────────────────────────────────────────────
@@ -1641,9 +1656,12 @@ function closeCatSheet(e) {
 }
 
 function openTxnSheetFromCat(id) {
-  // Close cat sheet first, open txn sheet
+  // Remember we came from a cat sheet so we return to it after saving
   document.getElementById('catSheet').classList.remove('open');
-  setTimeout(() => openTxnSheet(id), 200);
+  setTimeout(() => {
+    openTxnSheet(id);
+    sheetOpenedFromCat = currentCatSheet;
+  }, 200);
 }
 
 // ─── ANALYTICS ────────────────────────────────────────────────────────────────
@@ -1838,4 +1856,4 @@ if ('serviceWorker' in navigator) {
 
 </script>
 </body>
-</html> 
+</html>
