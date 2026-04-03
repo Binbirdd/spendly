@@ -288,8 +288,26 @@
   .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width: 0; }
+  /* PIN LOCK */
+  .pin-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid #444; background: transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .pin-dot.filled { background: #c8f565; border-color: #c8f565; }
+  .pin-dot.error { background: #ff6b6b; border-color: #ff6b6b; }
+  .pin-btn {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: #1e1e1e; border: 0.5px solid #333;
+    color: #f0f0f0; font-family: 'DM Sans', sans-serif;
+    font-size: 22px; font-weight: 500; cursor: pointer;
+    transition: background 0.1s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pin-btn:active { background: #333; transform: scale(0.94); }
+  .pin-del { font-size: 18px; }
+
+
 
   /* ANIMATIONS */
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -309,18 +327,79 @@
 </head>
 <body>
 
-<!-- LOCK SCREEN - TEMPORARILY DISABLED -->
-<div id="lockScreen" style="display:none; pointer-events:none;">
-  <div id="lockSubtitle"></div>
-  <button id="unlockBtn"></button>
-  <div id="passwordSection"><input id="passwordInput" type="password"><div id="lockError"></div></div>
+<!-- PIN LOCK SCREEN -->
+<div id="pinLock" style="
+  position:fixed; inset:0; z-index:9999; background:#0a0a0a;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding: 40px 32px; padding-bottom: calc(40px + env(safe-area-inset-bottom));
+">
+  <div style="font-size:52px; margin-bottom:16px;">💰</div>
+  <div style="font-size:24px; font-weight:600; color:#f0f0f0; letter-spacing:-0.03em; margin-bottom:6px;">Spendly</div>
+  <div id="pinPrompt" style="font-size:14px; color:#666; margin-bottom:40px;">Enter your PIN</div>
+
+  <!-- PIN dots -->
+  <div style="display:flex; gap:16px; margin-bottom:40px;" id="pinDots">
+    <div class="pin-dot"></div>
+    <div class="pin-dot"></div>
+    <div class="pin-dot"></div>
+    <div class="pin-dot"></div>
+  </div>
+
+  <!-- Number pad -->
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:240px;">
+    <button class="pin-btn" onclick="pinPress('1')">1</button>
+    <button class="pin-btn" onclick="pinPress('2')">2</button>
+    <button class="pin-btn" onclick="pinPress('3')">3</button>
+    <button class="pin-btn" onclick="pinPress('4')">4</button>
+    <button class="pin-btn" onclick="pinPress('5')">5</button>
+    <button class="pin-btn" onclick="pinPress('6')">6</button>
+    <button class="pin-btn" onclick="pinPress('7')">7</button>
+    <button class="pin-btn" onclick="pinPress('8')">8</button>
+    <button class="pin-btn" onclick="pinPress('9')">9</button>
+    <div></div>
+    <button class="pin-btn" onclick="pinPress('0')">0</button>
+    <button class="pin-btn pin-del" onclick="pinDelete()">⌫</button>
+  </div>
+
+  <div id="pinError" style="font-size:13px; color:#ff6b6b; margin-top:20px; min-height:20px; text-align:center;"></div>
 </div>
 
-<!-- SET PASSWORD SCREEN -->
-<div id="setPasswordScreen" style="display:none; pointer-events:none;">
-  <input id="newPasswordInput" type="password">
-  <input id="confirmPasswordInput" type="password">
-  <div id="setPasswordError"></div>
+<!-- SET PIN SCREEN -->
+<div id="setPinScreen" style="
+  position:fixed; inset:0; z-index:9998; background:#0a0a0a;
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  padding: 40px 32px;
+">
+  <div style="font-size:40px; margin-bottom:16px;">🔐</div>
+  <div style="font-size:22px; font-weight:600; color:#f0f0f0; margin-bottom:6px;" id="setPinTitle">Set your PIN</div>
+  <div style="font-size:14px; color:#666; margin-bottom:40px;" id="setPinSub">Choose a 4-digit PIN</div>
+
+  <div style="display:flex; gap:16px; margin-bottom:40px;" id="setPinDots">
+    <div class="pin-dot"></div>
+    <div class="pin-dot"></div>
+    <div class="pin-dot"></div>
+    <div class="pin-dot"></div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; width:240px;">
+    <button class="pin-btn" onclick="setPinPress('1')">1</button>
+    <button class="pin-btn" onclick="setPinPress('2')">2</button>
+    <button class="pin-btn" onclick="setPinPress('3')">3</button>
+    <button class="pin-btn" onclick="setPinPress('4')">4</button>
+    <button class="pin-btn" onclick="setPinPress('5')">5</button>
+    <button class="pin-btn" onclick="setPinPress('6')">6</button>
+    <button class="pin-btn" onclick="setPinPress('7')">7</button>
+    <button class="pin-btn" onclick="setPinPress('8')">8</button>
+    <button class="pin-btn" onclick="setPinPress('9')">9</button>
+    <div></div>
+    <button class="pin-btn" onclick="setPinPress('0')">0</button>
+    <button class="pin-btn pin-del" onclick="setPinDelete()">⌫</button>
+  </div>
+
+  <button onclick="skipPin()" style="
+    margin-top:24px; background:none; border:none; color:#444;
+    font-family:'DM Sans',sans-serif; font-size:14px; cursor:pointer;
+  ">Skip for now</button>
 </div>
 
 <input type="file" id="fileInput" accept=".csv,.pdf,.txt,.ofx,.qif">
@@ -583,11 +662,11 @@
 
   <div class="card">
     <div class="section-label">Security</div>
-    <div class="settings-row" onclick="showToast('Security features coming soon')">
+    <div class="settings-row" onclick="showSetPin()">
       <div class="settings-icon">🔐</div>
       <div class="settings-info">
-        <div class="settings-title">Change password</div>
-        <div class="settings-sub" id="passwordStatus">Coming soon</div>
+        <div class="settings-title">Change PIN</div>
+        <div class="settings-sub" id="pinStatus">Set a 4-digit PIN to lock the app</div>
       </div>
       <div class="settings-arrow">›</div>
     </div>
@@ -746,7 +825,137 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 
-// ─── DATA STORE ────────────────────────────────────────────────────────────────
+// ─── PIN LOCK ─────────────────────────────────────────────────────────────────
+const PIN_KEY = 'spendly_pin';
+let pinEntry = '';
+let setPinEntry = '';
+let setPinConfirm = '';
+let setPinStep = 'set'; // 'set' or 'confirm'
+
+function initLock() {
+  const hasPin = !!localStorage.getItem(PIN_KEY);
+  if (hasPin) {
+    document.getElementById('pinLock').style.display = 'flex';
+  } else {
+    document.getElementById('pinLock').style.display = 'none';
+    // First time — ask to set a PIN after a short delay
+    setTimeout(() => {
+      document.getElementById('setPinScreen').style.display = 'flex';
+    }, 800);
+  }
+}
+
+function updatePinDots(entry, containerId) {
+  const dots = document.querySelectorAll(`#${containerId} .pin-dot`);
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('filled', i < entry.length);
+    dot.classList.remove('error');
+  });
+}
+
+function pinPress(digit) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updatePinDots(pinEntry, 'pinDots');
+  if (pinEntry.length === 4) {
+    setTimeout(() => checkPin(), 150);
+  }
+}
+
+function pinDelete() {
+  pinEntry = pinEntry.slice(0, -1);
+  updatePinDots(pinEntry, 'pinDots');
+  document.getElementById('pinError').textContent = '';
+}
+
+function checkPin() {
+  const stored = localStorage.getItem(PIN_KEY);
+  if (pinEntry === stored) {
+    document.getElementById('pinLock').style.display = 'none';
+    pinEntry = '';
+    updatePinDots('', 'pinDots');
+  } else {
+    // Wrong PIN — shake dots red
+    const dots = document.querySelectorAll('#pinDots .pin-dot');
+    dots.forEach(d => { d.classList.remove('filled'); d.classList.add('error'); });
+    document.getElementById('pinError').textContent = 'Incorrect PIN. Try again.';
+    pinEntry = '';
+    setTimeout(() => {
+      dots.forEach(d => d.classList.remove('error'));
+      document.getElementById('pinError').textContent = '';
+    }, 1000);
+  }
+}
+
+function setPinPress(digit) {
+  if (setPinStep === 'set') {
+    if (setPinEntry.length >= 4) return;
+    setPinEntry += digit;
+    updatePinDots(setPinEntry, 'setPinDots');
+    if (setPinEntry.length === 4) {
+      setTimeout(() => {
+        setPinStep = 'confirm';
+        setPinConfirm = '';
+        document.getElementById('setPinTitle').textContent = 'Confirm your PIN';
+        document.getElementById('setPinSub').textContent = 'Enter your PIN again';
+        updatePinDots('', 'setPinDots');
+      }, 200);
+    }
+  } else {
+    if (setPinConfirm.length >= 4) return;
+    setPinConfirm += digit;
+    updatePinDots(setPinConfirm, 'setPinDots');
+    if (setPinConfirm.length === 4) {
+      setTimeout(() => confirmSetPin(), 150);
+    }
+  }
+}
+
+function setPinDelete() {
+  if (setPinStep === 'set') {
+    setPinEntry = setPinEntry.slice(0, -1);
+    updatePinDots(setPinEntry, 'setPinDots');
+  } else {
+    setPinConfirm = setPinConfirm.slice(0, -1);
+    updatePinDots(setPinConfirm, 'setPinDots');
+  }
+}
+
+function confirmSetPin() {
+  if (setPinEntry === setPinConfirm) {
+    localStorage.setItem(PIN_KEY, setPinEntry);
+    document.getElementById('setPinScreen').style.display = 'none';
+    setPinEntry = ''; setPinConfirm = ''; setPinStep = 'set';
+    showToast('✓ PIN set successfully!');
+    renderSettings();
+  } else {
+    const dots = document.querySelectorAll('#setPinDots .pin-dot');
+    dots.forEach(d => { d.classList.remove('filled'); d.classList.add('error'); });
+    setTimeout(() => {
+      dots.forEach(d => d.classList.remove('error'));
+      setPinStep = 'set';
+      setPinEntry = ''; setPinConfirm = '';
+      document.getElementById('setPinTitle').textContent = 'Set your PIN';
+      document.getElementById('setPinSub').textContent = 'PINs didn\'t match — try again';
+      updatePinDots('', 'setPinDots');
+    }, 800);
+  }
+}
+
+function skipPin() {
+  document.getElementById('setPinScreen').style.display = 'none';
+  setPinEntry = ''; setPinConfirm = ''; setPinStep = 'set';
+}
+
+function showSetPin() {
+  setPinEntry = ''; setPinConfirm = ''; setPinStep = 'set';
+  document.getElementById('setPinTitle').textContent = 'Set your PIN';
+  document.getElementById('setPinSub').textContent = 'Choose a 4-digit PIN';
+  updatePinDots('', 'setPinDots');
+  document.getElementById('setPinScreen').style.display = 'flex';
+}
+
+
 const DB = {
   save() { localStorage.setItem('spendly_v1', JSON.stringify({ transactions: this.transactions, learned: this.learned, uploads: this.uploads })); },
   load() {
@@ -1701,11 +1910,12 @@ function renderUploadHistory() {
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
-function showChangePassword() {
-  showToast('Security features coming soon');
-}
+function showChangePassword() { showSetPin(); }
 
 function renderSettings() {
+  const hasPin = !!localStorage.getItem(PIN_KEY);
+  const pinStatusEl = document.getElementById('pinStatus');
+  if (pinStatusEl) pinStatusEl.textContent = hasPin ? 'PIN is set ✓ — tap to change' : 'Set a 4-digit PIN to lock the app';
   const learned = Object.entries(DB.learned);
 
   if (!learned.length) {
@@ -2036,6 +2246,7 @@ renderDashboard();
 renderTransactions();
 renderInsights();
 renderUploadHistory();
+initLock();
 
 // ─── SERVICE WORKER ───────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
