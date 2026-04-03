@@ -370,6 +370,13 @@
   display:none; flex-direction:column; align-items:center; justify-content:center;
   padding: 40px 32px;
 ">
+  <div style="width:100%; display:flex; justify-content:flex-start; margin-bottom:20px;">
+    <button onclick="skipPin()" style="
+      width:36px; height:36px; border-radius:50%; border:0.5px solid #333;
+      background:#1e1e1e; color:#888; font-size:18px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+    ">‹</button>
+  </div>
   <div style="font-size:40px; margin-bottom:16px;">🔐</div>
   <div style="font-size:22px; font-weight:600; color:#f0f0f0; margin-bottom:6px;" id="setPinTitle">Set your PIN</div>
   <div style="font-size:14px; color:#666; margin-bottom:40px;" id="setPinSub">Choose a 4-digit PIN</div>
@@ -693,11 +700,18 @@
   <div class="card">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
       <div class="section-label" style="margin-bottom:0;">Category order</div>
-      <button id="catEditBtn" onclick="toggleCatEdit()" style="
-        font-size:13px; font-weight:500; padding:5px 14px; border-radius:10px;
-        border:0.5px solid var(--border2); background:var(--bg3);
-        color:var(--text2); font-family:var(--font); cursor:pointer;
-      ">Edit</button>
+      <div style="display:flex; gap:8px;">
+        <button onclick="openCatMgmt()" style="
+          font-size:13px; font-weight:500; padding:5px 14px; border-radius:10px;
+          border:0.5px solid var(--border2); background:var(--bg3);
+          color:var(--text2); font-family:var(--font); cursor:pointer;
+        ">Manage</button>
+        <button id="catEditBtn" onclick="toggleCatEdit()" style="
+          font-size:13px; font-weight:500; padding:5px 14px; border-radius:10px;
+          border:0.5px solid var(--border2); background:var(--bg3);
+          color:var(--text2); font-family:var(--font); cursor:pointer;
+        ">Edit</button>
+      </div>
     </div>
     <div id="catOrderList"></div>
   </div>
@@ -778,6 +792,48 @@
   </div>
 </div>
 
+<!-- CATEGORY MANAGEMENT SHEET -->
+<div class="sheet-overlay" id="catMgmtSheet" onclick="closeCatMgmt(event)">
+  <div class="sheet" style="max-height:90vh;">
+    <div class="sheet-handle"></div>
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+      <button onclick="closeCatMgmt()" style="
+        width:36px; height:36px; border-radius:50%; border:0.5px solid var(--border2);
+        background:var(--bg3); color:var(--text2); font-size:18px; cursor:pointer;
+        display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      ">‹</button>
+      <div class="sheet-title" style="margin-bottom:0;">Manage categories</div>
+    </div>
+
+    <!-- Add new category -->
+    <div style="margin-bottom:20px;">
+      <div class="field-label">Add new category</div>
+      <div style="display:flex; gap:8px; margin-bottom:8px;">
+        <input id="newCatEmoji" type="text" placeholder="😀" maxlength="2" style="
+          width:52px; padding:12px; border-radius:var(--r); text-align:center;
+          background:var(--bg3); border:0.5px solid var(--border2);
+          color:var(--text); font-size:20px; outline:none;
+        ">
+        <input id="newCatName" type="text" placeholder="Category name" style="
+          flex:1; padding:12px 14px; border-radius:var(--r);
+          background:var(--bg3); border:0.5px solid var(--border2);
+          color:var(--text); font-family:var(--font); font-size:14px; outline:none;
+        ">
+        <button onclick="addNewCategory()" style="
+          padding:12px 16px; border-radius:var(--r); border:none;
+          background:var(--accent); color:#0a0a0a; font-family:var(--font);
+          font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap;
+        ">Add</button>
+      </div>
+    </div>
+
+    <!-- Existing categories -->
+    <div class="field-label">Edit existing</div>
+    <div id="catMgmtList"></div>
+    <div style="height:12px;"></div>
+  </div>
+</div>
+
 <!-- BOTTOM NAV -->
 <nav class="nav">
   <button class="nav-btn active" onclick="showPage('dashboard',this)">
@@ -822,8 +878,11 @@
       <div id="sheetIconWrap" style="width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px;"></div>
     </div>
     <div class="field-label">Category</div>
-    <select class="field-select" id="sheetCatSelect" onchange="saveCategoryChange()"></select>
-    <div style="font-size: 12px; color: var(--text2); margin-top: -10px; margin-bottom: 20px;" id="sheetLearnNote"></div>
+    <div id="catPickerList" style="
+      max-height: 220px; overflow-y: auto; border-radius: var(--r);
+      border: 0.5px solid var(--border2); margin-bottom: 16px;
+    "></div>
+    <div style="font-size: 12px; color: var(--text2); margin-bottom: 20px;" id="sheetLearnNote"></div>
     <button class="btn btn-secondary" onclick="closeTxnSheet()">Done</button>
   </div>
 </div>
@@ -1977,6 +2036,55 @@ function renderTransactions() {
 // ─── TRANSACTION SHEET ────────────────────────────────────────────────────────
 let sheetTxnId = null;
 
+function renderCatPicker(selectedCat) {
+  const ordered = getOrderedCatNames();
+  const el = document.getElementById('catPickerList');
+  if (!el) return;
+  el.innerHTML = ordered.map(n => {
+    const c = CATS[n] || CATS['Other'];
+    const isSelected = n === selectedCat;
+    return `<div onclick="pickCategory('${n}')" style="
+      display:flex; align-items:center; gap:12px; padding:12px 14px;
+      border-bottom:0.5px solid var(--border); cursor:pointer;
+      background:${isSelected ? 'var(--accent-dim)' : 'transparent'};
+      transition: background 0.1s;
+    ">
+      <div style="width:32px; height:32px; border-radius:9px; background:${c.dim}; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;">${c.emoji}</div>
+      <div style="font-size:14px; font-weight:${isSelected ? '600' : '400'}; color:${isSelected ? 'var(--accent)' : 'var(--text)'}; flex:1;">${n}</div>
+      ${isSelected ? '<div style="color:var(--accent); font-size:16px;">✓</div>' : ''}
+    </div>`;
+  }).join('');
+  // Scroll picker and sheet to top
+  setTimeout(() => {
+    el.scrollTop = 0;
+    const sheet = document.querySelector('#txnSheet .sheet');
+    if (sheet) sheet.scrollTop = 0;
+  }, 50);
+}
+
+function pickCategory(cat) {
+  const t = DB.transactions.find(x => x.id === sheetTxnId);
+  if (!t) return;
+  t.category = cat;
+  t.learned = true;
+  DB.learned[t.merchant.toLowerCase()] = cat;
+  DB.transactions.forEach(tx => {
+    if (tx.merchant.toLowerCase() === t.merchant.toLowerCase()) {
+      tx.category = cat; tx.learned = true;
+    }
+  });
+  DB.save();
+  const c = CATS[cat] || CATS['Other'];
+  document.getElementById('sheetIconWrap').style.background = c.dim;
+  document.getElementById('sheetIconWrap').textContent = c.emoji;
+  document.getElementById('sheetLearnNote').textContent = '✦ Saved! I\'ll remember this for ' + t.merchant;
+  renderCatPicker(cat);
+  showToast(`✓ ${t.merchant} → ${cat}`);
+  if (sheetOpenedFromCat) {
+    renderDashboard(); renderTransactions();
+  }
+}
+
 function openTxnSheet(id) {
   const t = DB.transactions.find(x => x.id === id);
   if (!t) return;
@@ -1984,7 +2092,6 @@ function openTxnSheet(id) {
   const c = CATS[t.category] || CATS['Other'];
 
   document.getElementById('sheetMerchant').textContent = t.merchant;
-  // Fix 1: show + for credits, - for debits
   document.getElementById('sheetAmount').textContent = `${t.isDebit ? '-' : '+'}${fmt(t.amount)}`;
   document.getElementById('sheetAmount').style.color = t.isDebit ? 'var(--text)' : '#c8f565';
   document.getElementById('sheetDate').textContent = formatDate(t.date);
@@ -1992,11 +2099,9 @@ function openTxnSheet(id) {
   document.getElementById('sheetIconWrap').textContent = c.emoji;
   document.getElementById('sheetLearnNote').textContent = t.learned ? '✦ You taught me this category' : 'Change the category to teach the app';
 
-  const sel = document.getElementById('sheetCatSelect');
-  sel.innerHTML = getOrderedCatNames().map(n => `<option value="${n}"${n===t.category?' selected':''}>${CATS[n].emoji} ${n}</option>`).join('');
+  renderCatPicker(t.category);
 
   document.getElementById('txnSheet').classList.add('open');
-  // Fix 2: scroll sheet to top
   setTimeout(() => { document.querySelector('#txnSheet .sheet').scrollTop = 0; }, 50);
 }
 
@@ -2014,38 +2119,7 @@ function closeTxnSheet(e) {
 let sheetOpenedFromCat = null;
 
 function saveCategoryChange() {
-  const newCat = document.getElementById('sheetCatSelect').value;
-  const t = DB.transactions.find(x => x.id === sheetTxnId);
-  if (!t) return;
-
-  t.category = newCat;
-  t.learned = true;
-
-  // Learn for all matching merchants
-  DB.learned[t.merchant.toLowerCase()] = newCat;
-  DB.transactions.forEach(tx => {
-    if (tx.merchant.toLowerCase() === t.merchant.toLowerCase()) {
-      tx.category = newCat;
-      tx.learned = true;
-    }
-  });
-
-  DB.save();
-  document.getElementById('sheetLearnNote').textContent = '✦ Saved! I\'ll remember this for ' + t.merchant;
-  showToast(`✓ Learned: ${t.merchant} → ${newCat}`);
-
-  // If opened from a category sheet, go back to it (refreshed) instead of dashboard
-  if (sheetOpenedFromCat) {
-    const returnCat = sheetOpenedFromCat;
-    sheetOpenedFromCat = null;
-    document.getElementById('txnSheet').classList.remove('open');
-    setTimeout(() => openCatSheet(returnCat), 200);
-  } else {
-    renderDashboard();
-    renderTransactions();
-    renderInsights();
-    renderSettings();
-  }
+  // Now handled by pickCategory()
 }
 
 // ─── INSIGHTS ─────────────────────────────────────────────────────────────────
@@ -2140,6 +2214,112 @@ function renderUploadHistory() {
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
 function showChangePassword() { showSetPin(); }
+
+// ─── CATEGORY MANAGEMENT ──────────────────────────────────────────────────────
+const CUSTOM_CATS_KEY = 'spendly_custom_cats';
+
+function loadCustomCats() {
+  try { return JSON.parse(localStorage.getItem(CUSTOM_CATS_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function saveCustomCats(obj) {
+  localStorage.setItem(CUSTOM_CATS_KEY, JSON.stringify(obj));
+}
+
+function openCatMgmt() {
+  renderCatMgmtList();
+  document.getElementById('catMgmtSheet').classList.add('open');
+  setTimeout(() => { document.querySelector('#catMgmtSheet .sheet').scrollTop = 0; }, 50);
+}
+
+function closeCatMgmt(e) {
+  if (!e || e.target === document.getElementById('catMgmtSheet')) {
+    document.getElementById('catMgmtSheet').classList.remove('open');
+  }
+}
+
+function renderCatMgmtList() {
+  const el = document.getElementById('catMgmtList');
+  if (!el) return;
+  const ordered = getOrderedCatNames();
+  el.innerHTML = ordered.map(name => {
+    const c = CATS[name] || CATS['Other'];
+    return `<div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border);">
+      <div style="width:36px; height:36px; border-radius:10px; background:${c.dim}; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">${c.emoji}</div>
+      <input value="${name}" onchange="renameCat('${name}', this.value)" style="
+        flex:1; padding:8px 10px; border-radius:10px; font-size:14px;
+        background:var(--bg3); border:0.5px solid var(--border2);
+        color:var(--text); font-family:var(--font); outline:none;
+      ">
+      <input value="${c.emoji}" onchange="renameCatEmoji('${name}', this.value)" maxlength="2" style="
+        width:44px; padding:8px; border-radius:10px; font-size:18px; text-align:center;
+        background:var(--bg3); border:0.5px solid var(--border2);
+        color:var(--text); outline:none;
+      ">
+    </div>`;
+  }).join('');
+}
+
+function renameCat(oldName, newName) {
+  newName = newName.trim();
+  if (!newName || newName === oldName) return;
+  if (CATS[newName]) { showToast('That name already exists'); return; }
+
+  // Update CATS
+  CATS[newName] = { ...CATS[oldName] };
+  delete CATS[oldName];
+
+  // Update all transactions
+  DB.transactions.forEach(t => { if (t.category === oldName) t.category = newName; });
+
+  // Update learned
+  Object.keys(DB.learned).forEach(k => { if (DB.learned[k] === oldName) DB.learned[k] = newName; });
+
+  // Update cat order
+  const order = getOrderedCatNames().map(n => n === oldName ? newName : n);
+  saveCatOrder(order);
+
+  DB.save();
+  renderCatMgmtList();
+  renderDashboard();
+  renderTransactions();
+  showToast(`✓ Renamed to ${newName}`);
+}
+
+function renameCatEmoji(catName, newEmoji) {
+  newEmoji = newEmoji.trim();
+  if (!newEmoji || !CATS[catName]) return;
+  CATS[catName].emoji = newEmoji;
+  renderCatMgmtList();
+  renderDashboard();
+  showToast(`✓ Emoji updated`);
+}
+
+function addNewCategory() {
+  const nameEl = document.getElementById('newCatName');
+  const emojiEl = document.getElementById('newCatEmoji');
+  const name = nameEl.value.trim();
+  const emoji = emojiEl.value.trim() || '📁';
+
+  if (!name) { showToast('Please enter a category name'); return; }
+  if (CATS[name]) { showToast('Category already exists'); return; }
+
+  // Add to CATS
+  const colors = ['#80cbc4','#ffb74d','#f06292','#aed581','#7986cb','#4db6ac','#ff8a65'];
+  const col = colors[Object.keys(CATS).length % colors.length];
+  CATS[name] = { emoji, color: col, dim: col + '26' };
+
+  // Add to order
+  const order = getOrderedCatNames();
+  order.splice(order.length - 2, 0, name); // Insert before Other
+  saveCatOrder(order);
+
+  nameEl.value = '';
+  emojiEl.value = '';
+  renderCatMgmtList();
+  renderCatOrderList();
+  showToast(`✓ Added "${name}"`);
+}
 
 function renderSettings() {
   const hasPin = !!localStorage.getItem(PIN_KEY);
