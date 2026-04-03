@@ -834,6 +834,50 @@
   </div>
 </div>
 
+<!-- DELETE CATEGORY CONFIRMATION SHEET -->
+<div class="sheet-overlay" id="deleteCatSheet" onclick="closeDeleteCatSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+      <button onclick="closeDeleteCatSheet()" style="
+        width:36px; height:36px; border-radius:50%; border:0.5px solid var(--border2);
+        background:var(--bg3); color:var(--text2); font-size:18px; cursor:pointer;
+        display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      ">‹</button>
+      <div class="sheet-title" style="margin-bottom:0;">Delete category</div>
+    </div>
+    <div id="deleteCatInfo" style="
+      background:var(--bg3); border-radius:var(--r); padding:14px; margin-bottom:20px;
+      font-size:14px; color:var(--text2); line-height:1.6;
+    "></div>
+    <div class="field-label">What to do with transactions in this category?</div>
+    <button onclick="deleteCatAction('move')" style="
+      width:100%; padding:14px; border-radius:var(--r); margin-bottom:10px;
+      border:0.5px solid var(--border2); background:var(--bg3);
+      color:var(--text); font-family:var(--font); font-size:14px;
+      font-weight:500; cursor:pointer; text-align:left; display:flex; align-items:center; gap:12px;
+    ">
+      <span style="font-size:20px;">📦</span>
+      <div>
+        <div style="font-weight:600;">Move to Other</div>
+        <div style="font-size:12px; color:var(--text2); margin-top:2px;">Keep all transactions, just recategorise them</div>
+      </div>
+    </button>
+    <button onclick="deleteCatAction('delete')" style="
+      width:100%; padding:14px; border-radius:var(--r); margin-bottom:20px;
+      border:0.5px solid rgba(255,107,107,0.3); background:rgba(255,107,107,0.08);
+      color:#ff6b6b; font-family:var(--font); font-size:14px;
+      font-weight:500; cursor:pointer; text-align:left; display:flex; align-items:center; gap:12px;
+    ">
+      <span style="font-size:20px;">🗑️</span>
+      <div>
+        <div style="font-weight:600;">Delete all transactions</div>
+        <div style="font-size:12px; color:rgba(255,107,107,0.7); margin-top:2px;">Permanently removes all transactions in this category</div>
+      </div>
+    </button>
+  </div>
+</div>
+
 <!-- BOTTOM NAV -->
 <nav class="nav">
   <button class="nav-btn active" onclick="showPage('dashboard',this)">
@@ -2242,8 +2286,11 @@ function renderCatMgmtList() {
   const el = document.getElementById('catMgmtList');
   if (!el) return;
   const ordered = getOrderedCatNames();
+  // Protected categories that can't be deleted
+  const PROTECTED = ['Other', 'Income', 'Transfers'];
   el.innerHTML = ordered.map(name => {
     const c = CATS[name] || CATS['Other'];
+    const isProtected = PROTECTED.includes(name);
     return `<div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:0.5px solid var(--border);">
       <div style="width:36px; height:36px; border-radius:10px; background:${c.dim}; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">${c.emoji}</div>
       <input value="${name}" onchange="renameCat('${name}', this.value)" style="
@@ -2256,6 +2303,14 @@ function renderCatMgmtList() {
         background:var(--bg3); border:0.5px solid var(--border2);
         color:var(--text); outline:none;
       ">
+      ${isProtected
+        ? `<div style="width:32px; height:32px; flex-shrink:0;"></div>`
+        : `<button onclick="confirmDeleteCat('${name}')" style="
+            width:32px; height:32px; border-radius:8px; border:0.5px solid rgba(255,107,107,0.3);
+            background:rgba(255,107,107,0.1); color:#ff6b6b; font-size:16px;
+            cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+          ">🗑</button>`
+      }
     </div>`;
   }).join('');
 }
@@ -2319,6 +2374,59 @@ function addNewCategory() {
   renderCatMgmtList();
   renderCatOrderList();
   showToast(`✓ Added "${name}"`);
+}
+
+let deleteCatTarget = null;
+
+function confirmDeleteCat(name) {
+  deleteCatTarget = name;
+  const count = DB.transactions.filter(t => t.category === name).length;
+  document.getElementById('deleteCatInfo').innerHTML = `
+    You are about to delete <strong style="color:var(--text);">${name}</strong>.<br>
+    This category has <strong style="color:var(--text);">${count} transaction${count !== 1 ? 's' : ''}</strong> in it.
+  `;
+  document.getElementById('catMgmtSheet').classList.remove('open');
+  setTimeout(() => {
+    document.getElementById('deleteCatSheet').classList.add('open');
+  }, 200);
+}
+
+function closeDeleteCatSheet(e) {
+  if (!e || e.target === document.getElementById('deleteCatSheet')) {
+    document.getElementById('deleteCatSheet').classList.remove('open');
+    deleteCatTarget = null;
+    // Reopen manage sheet
+    setTimeout(() => openCatMgmt(), 200);
+  }
+}
+
+function deleteCatAction(action) {
+  const name = deleteCatTarget;
+  if (!name) return;
+
+  if (action === 'move') {
+    // Move all transactions to Other
+    DB.transactions.forEach(t => { if (t.category === name) t.category = 'Other'; });
+    Object.keys(DB.learned).forEach(k => { if (DB.learned[k] === name) DB.learned[k] = 'Other'; });
+  } else {
+    // Delete all transactions in this category
+    DB.transactions = DB.transactions.filter(t => t.category !== name);
+  }
+
+  // Remove the category
+  delete CATS[name];
+  const order = getOrderedCatNames().filter(n => n !== name);
+  saveCatOrder(order);
+  DB.save();
+
+  document.getElementById('deleteCatSheet').classList.remove('open');
+  deleteCatTarget = null;
+
+  renderDashboard();
+  renderTransactions();
+  renderInsights();
+  renderSettings();
+  showToast(`✓ "${name}" deleted`);
 }
 
 function renderSettings() {
