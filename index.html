@@ -306,6 +306,20 @@
 </head>
 <body>
 
+<!-- LOCK SCREEN - TEMPORARILY DISABLED -->
+<div id="lockScreen" style="display:none; pointer-events:none;">
+  <div id="lockSubtitle"></div>
+  <button id="unlockBtn"></button>
+  <div id="passwordSection"><input id="passwordInput" type="password"><div id="lockError"></div></div>
+</div>
+
+<!-- SET PASSWORD SCREEN -->
+<div id="setPasswordScreen" style="display:none; pointer-events:none;">
+  <input id="newPasswordInput" type="password">
+  <input id="confirmPasswordInput" type="password">
+  <div id="setPasswordError"></div>
+</div>
+
 <input type="file" id="fileInput" accept=".csv,.pdf,.txt,.ofx,.qif">
 
 <!-- PAGES -->
@@ -565,15 +579,66 @@
   </div>
 
   <div class="card">
-    <div class="section-label">Data</div>
-    <div class="settings-row" onclick="exportData()">
-      <div class="settings-icon">📤</div>
+    <div class="section-label">Security</div>
+    <div class="settings-row" onclick="showToast('Security features coming soon')">
+      <div class="settings-icon">🔐</div>
       <div class="settings-info">
-        <div class="settings-title">Export all data</div>
-        <div class="settings-sub">Download your transactions as CSV</div>
+        <div class="settings-title">Change password</div>
+        <div class="settings-sub" id="passwordStatus">Coming soon</div>
       </div>
       <div class="settings-arrow">›</div>
     </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Backup & restore</div>
+
+    <!-- Export full backup -->
+    <div class="settings-row" onclick="exportFullBackup()">
+      <div class="settings-icon">💾</div>
+      <div class="settings-info">
+        <div class="settings-title">Export full backup</div>
+        <div class="settings-sub">Saves everything — transactions, categories & settings</div>
+      </div>
+      <div class="settings-arrow">›</div>
+    </div>
+
+    <!-- Import backup -->
+    <div class="settings-row" onclick="document.getElementById('backupFileInput').click()">
+      <div class="settings-icon">📲</div>
+      <div class="settings-info">
+        <div class="settings-title">Restore from backup</div>
+        <div class="settings-sub">Import a previously exported backup file</div>
+      </div>
+      <div class="settings-arrow">›</div>
+    </div>
+    <input type="file" id="backupFileInput" accept=".json" style="display:none;" onchange="importFullBackup(event)">
+
+    <!-- Export CSV -->
+    <div class="settings-row" onclick="exportData()">
+      <div class="settings-icon">📤</div>
+      <div class="settings-info">
+        <div class="settings-title">Export transactions as CSV</div>
+        <div class="settings-sub">For use in Excel or other apps</div>
+      </div>
+      <div class="settings-arrow">›</div>
+    </div>
+
+    <!-- How to transfer guide -->
+    <div style="background:var(--bg3); border-radius:var(--r); padding:14px; margin-top:8px;">
+      <div style="font-size:12px; font-weight:600; color:var(--text); margin-bottom:10px;">📱 How to transfer to a new phone</div>
+      <div style="font-size:12px; color:var(--text2); line-height:1.9;">
+        <div style="margin-bottom:4px;"><span style="color:var(--accent); font-weight:600;">Step 1</span> &nbsp;On your old phone, tap <strong style="color:var(--text);">Export full backup</strong> above</div>
+        <div style="margin-bottom:4px;"><span style="color:var(--accent); font-weight:600;">Step 2</span> &nbsp;Save the file to iCloud Drive or email it to yourself</div>
+        <div style="margin-bottom:4px;"><span style="color:var(--accent); font-weight:600;">Step 3</span> &nbsp;On your new phone, open Spendly and go to Settings</div>
+        <div style="margin-bottom:4px;"><span style="color:var(--accent); font-weight:600;">Step 4</span> &nbsp;Tap <strong style="color:var(--text);">Restore from backup</strong> and select your file</div>
+        <div><span style="color:var(--accent); font-weight:600;">Step 5</span> &nbsp;All your data, categories and history will be restored ✓</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Danger zone</div>
     <div class="settings-row" onclick="clearData()">
       <div class="settings-icon">🗑️</div>
       <div class="settings-info">
@@ -629,7 +694,14 @@
 <div class="sheet-overlay" id="txnSheet" onclick="closeTxnSheet(event)">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title" id="sheetMerchant">Merchant</div>
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <button onclick="closeTxnSheet()" style="
+        width:36px; height:36px; border-radius:50%; border:0.5px solid var(--border2);
+        background:var(--bg3); color:var(--text2); font-size:18px; cursor:pointer;
+        display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      ">‹</button>
+      <div class="sheet-title" id="sheetMerchant" style="margin-bottom:0;">Merchant</div>
+    </div>
     <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
       <div>
         <div style="font-size: 28px; font-weight: 600; letter-spacing: -0.03em;" id="sheetAmount">$0.00</div>
@@ -649,6 +721,11 @@
   <div class="sheet" style="max-height: 90vh;">
     <div class="sheet-handle"></div>
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+      <button onclick="closeCatSheet()" style="
+        width:36px; height:36px; border-radius:50%; border:0.5px solid var(--border2);
+        background:var(--bg3); color:var(--text2); font-size:18px; cursor:pointer;
+        display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      ">‹</button>
       <div id="catSheetIcon" style="width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px;"></div>
       <div>
         <div class="sheet-title" id="catSheetTitle" style="margin-bottom:2px;"></div>
@@ -714,16 +791,16 @@ const RULES = [
   { cat: 'Internet & phone', kw: ['telstra','optus','vodafone','tpg','belong','aussie broadband','superloop','iinet','internode','dodo','amaysim','boost mobile','kogan mobile','aldi mobile','catch connect','internet','broadband','mobile plan'] },
   { cat: 'Insurance', kw: ['insurance','nrma','racq','racv','rac ','budget direct','real insurance','youi','aami','allianz','qbe','suncorp insur','bupa','medibank','hbf','ahm','nib','cgu','gi policy'] },
   { cat: 'Groceries', kw: ['woolworths','coles','aldi','iga','foodland','harris farm','costco','fruit','butcher','bakery','supermarket','fresh'] },
-  { cat: 'Dining out', kw: ['mcdonald','hungry jack','kfc','subway','domino','pizza','grill\'d','nando','uber eat','deliveroo','doordash','menulog','cafe','restaurant','bar ','bistro','thai','sushi','ramen','burger','burrito','kebab','chinese','indian','italian','japanese','korean'] },
+  { cat: 'Dining out', kw: ['mcdonald','hungry jack','kfc','subway','domino','pizza','grill\'d','nando','uber eat','deliveroo','doordash','menulog','cafe','restaurant','bar ','bistro','thai','sushi','ramen','burger','burrito','kebab','chinese','indian','italian','japanese','korean','osushi','crosseyed','espresso','kooco','balter','barefoot','zam '] },
   { cat: 'Transport', kw: ['opal','myki','go card','translink','bus','train','tram','taxi','uber','ola ','didi','lyft','ampol','bp ','shell','caltex','7-eleven fuel','petrol','parking','wilson park','care park','service station'] },
-  { cat: 'Subscriptions', kw: ['netflix','spotify','amazon prime','disney','binge','kayo','stan ','apple','google one','icloud','microsoft','adobe','canva','dropbox','youtube','youtube premium','foxtel'] },
-  { cat: 'Health', kw: ['chemist','pharmacy','priceline','terry white','amcal','doctor','medical','clinic','gp ','dentist','physio','optometrist','hospital','pathology','bulk bill'] },
-  { cat: 'Shopping', kw: ['amazon','jb hi-fi','harvey norm','the good guys','target','kmart','big w','myer','david jones','cotton on','uniqlo','zara','h&m','asos','ebay','catch','oz sale','rebel sport','lululemon','glue store','afterpay','zip pay','humm','depop','vinted','paypal'] },
+  { cat: 'Subscriptions', kw: ['netflix','spotify','amazon prime','disney','binge','kayo','stan ','apple','google one','icloud','microsoft','adobe','canva','dropbox','youtube','youtube premium','foxtel','pocketsmith'] },
+  { cat: 'Health', kw: ['chemist','pharmacy','priceline','terry white','amcal','doctor','medical','clinic','gp ','dentist','physio','optometrist','hospital','pathology','bulk bill','iherb'] },
+  { cat: 'Shopping', kw: ['amazon','jb hi-fi','harvey norm','the good guys','target','kmart','big w','myer','david jones','cotton on','uniqlo','zara','h&m','asos','ebay','catch','oz sale','rebel sport','lululemon','glue store','afterpay','zip pay','humm','depop','vinted','paypal','cottonaustr'] },
   { cat: 'Entertainment', kw: ['cinema','event cinema','hoyts','village cinema','reading cinema','ticketek','ticketmaster','eventbrite','gaming','playstation','xbox','steam ','movie','concert','live nation'] },
   { cat: 'Travel', kw: ['qantas','virgin australia','jetstar','tigerair','rex airline','airbnb','booking.com','expedia','hotel','motel','resort','agoda','wotif','flight centre','skyscanner','wise transfer','wise'] },
   { cat: 'Education', kw: ['university','tafe','udemy','coursera','skillshare','tutoring','school','textbook','stationary'] },
-  { cat: 'Personal care', kw: ['haircut','salon','barber','spa','nail','beauty','wax','massage','gym','fitness','anytime fitness','f45','crossfit','yoga','pilates'] },
-  { cat: 'Health', kw: ['chemist','pharmacy','priceline','terry white','amcal','doctor','medical','clinic','gp ','dentist','physio','optometrist','hospital','pathology','bulk bill','specsaver','optical'] },
+  { cat: 'Personal care', kw: ['haircut','salon','barber','spa','nail','beauty','wax','massage','gym','fitness','anytime fitness','f45','crossfit','yoga','pilates','brasco','the barber','sarahjomaa'] },
+  { cat: 'Health', kw: ['chemist','pharmacy','priceline','terry white','amcal','doctor','medical','clinic','gp ','dentist','physio','optometrist','hospital','pathology','bulk bill','specsaver','optical','iherb'] },
   { cat: 'Transfers', kw: ['home loan','loan repayment','holiday funds','savings','offset'] },
   { cat: 'Income', kw: ['salary','payroll','wage','interest','dividend','tax refund','centrelink','ato refund'] },
 ];
@@ -741,6 +818,70 @@ function categorise(merchant) {
 function parseCSV(text) {
   const allLines = text.trim().split(/\r?\n/).filter(l => l.trim());
   if (allLines.length < 2) return [];
+
+  // ── Wise (TransferWise) detection ──
+  // Header contains "TransferWise ID" or "TransactionType"
+  const firstLine = allLines[0].toLowerCase();
+  const isWise = firstLine.includes('transferwise') || firstLine.includes('transaction type');
+
+  if (isWise) {
+    const headers = splitCSVLine(allLines[0]).map(h => h.replace(/"/g,'').trim().toLowerCase());
+    const dateIdx    = headers.findIndex(h => h === 'date');
+    const amtIdx     = headers.findIndex(h => h === 'amount');
+    const merchantIdx = headers.findIndex(h => h === 'merchant');
+    const descIdx    = headers.findIndex(h => h === 'description');
+    const typeIdx    = headers.findIndex(h => h === 'transaction type');
+
+    const rows = [];
+    for (let i = 1; i < allLines.length; i++) {
+      const cols = splitCSVLine(allLines[i]);
+      if (cols.length < 3) continue;
+
+      const date    = cols[dateIdx]?.replace(/"/g,'').trim();
+      const rawAmt  = cols[amtIdx]?.replace(/"/g,'').trim();
+      const amount  = parseFloat(rawAmt) || 0;
+      const txType  = cols[typeIdx]?.replace(/"/g,'').trim().toUpperCase();
+
+      // Use Merchant column if available, else Description
+      let merchant = (cols[merchantIdx]?.replace(/"/g,'').trim() ||
+                      cols[descIdx]?.replace(/"/g,'').trim() || '');
+
+      // Clean up verbose Wise descriptions
+      merchant = merchant
+        .replace(/^Card transaction of [\d.]+ AUD issued by /i, '')
+        .replace(/^Received money from .+ with reference /i, '')
+        .replace(/\s+/g, ' ').trim();
+
+      if (!date || !merchant || amount === 0) continue;
+
+      const parsedDate = parseDate(date);
+      if (!parsedDate) continue;
+
+      const isDebit = amount < 0;
+
+      // Categorise by transaction type first
+      let prefixCat = null;
+      if (txType === 'CREDIT' || txType === 'DEPOSIT') {
+        prefixCat = merchant.toLowerCase().includes('wise transfer') || merchant.toLowerCase().includes('walker jordan') ? 'Transfers' : 'Income';
+      } else if (txType === 'TRANSFER') {
+        prefixCat = 'Transfers';
+      }
+
+      const category = prefixCat || categorise(merchant);
+
+      rows.push({
+        id: Date.now() + '-' + i,
+        date: parsedDate,
+        merchant: cleanMerchant(merchant),
+        rawMerchant: merchant,
+        amount: parseFloat(Math.abs(amount).toFixed(2)),
+        category,
+        isDebit,
+        learned: !!DB.learned[merchant.toLowerCase()],
+      });
+    }
+    return rows;
+  }
 
   // ── Suncorp detection ──
   // Suncorp exports start with two metadata rows then go straight into data:
@@ -1564,8 +1705,13 @@ function renderUploadHistory() {
 }
 
 // ─── SETTINGS ─────────────────────────────────────────────────────────────────
+function showChangePassword() {
+  showToast('Security features coming soon');
+}
+
 function renderSettings() {
   const learned = Object.entries(DB.learned);
+
   if (!learned.length) {
     document.getElementById('learnedList').innerHTML = `<div style="font-size:13px; color: var(--text2); padding: 8px 0;">No learned mappings yet.</div>`;
     return;
@@ -1579,7 +1725,59 @@ function renderSettings() {
   }).join('') + (learned.length > 20 ? `<div style="font-size:12px; color: var(--text3); padding-top: 8px;">+${learned.length-20} more</div>` : '');
 }
 
-function exportData() {
+function exportFullBackup() {
+  if (!DB.transactions.length) { showToast('No data to backup'); return; }
+  const backup = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    transactions: DB.transactions,
+    learned: DB.learned,
+    uploads: DB.uploads,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `spendly-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Backup exported!');
+}
+
+function importFullBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const backup = JSON.parse(e.target.result);
+
+      if (!backup.version || !backup.transactions) {
+        showToast('Invalid backup file');
+        return;
+      }
+
+      if (!confirm(`This will restore ${backup.transactions.length} transactions from ${new Date(backup.exportedAt).toLocaleDateString('en-AU')}.\n\nYour current data will be replaced. Continue?`)) return;
+
+      DB.transactions = backup.transactions || [];
+      DB.learned = backup.learned || {};
+      DB.uploads = backup.uploads || [];
+      DB.save();
+
+      renderDashboard();
+      renderTransactions();
+      renderInsights();
+      renderSettings();
+      showToast(`✓ Restored ${DB.transactions.length} transactions`);
+
+    } catch (err) {
+      showToast('Could not read backup file');
+    }
+  };
+  reader.readAsText(file);
+}
   if (!DB.transactions.length) { showToast('No data to export'); return; }
   const csv = ['Date,Merchant,Amount,Category']
     .concat(DB.transactions.map(t => `${t.date},"${t.merchant}",${t.amount},"${t.category}"`))
