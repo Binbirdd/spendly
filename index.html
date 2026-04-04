@@ -82,8 +82,8 @@
     padding: 4px 0;
   }
   .nav-btn.active { color: var(--accent); }
-  .nav-btn svg { width: 22px; height: 22px; }
-  .nav-btn span { font-size: 10px; font-weight: 500; letter-spacing: 0.03em; }
+  .nav-btn svg { width: 24px; height: 24px; }
+  .nav-btn span { display: none; }
 
   /* PAGES */
   .page { display: none; padding: 0 16px; padding-top: calc(env(safe-area-inset-top, 0px) + 16px); }
@@ -633,8 +633,9 @@
   </div>
 
   <div class="card" id="supportedBanks">
-    <div class="section-label">Works with</div>
+    <div class="section-label">Works with all major Australian banks</div>
     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <span class="format-tag">Suncorp</span>
       <span class="format-tag">CommBank</span>
       <span class="format-tag">ANZ</span>
       <span class="format-tag">Westpac</span>
@@ -643,7 +644,8 @@
       <span class="format-tag">Macquarie</span>
       <span class="format-tag">Bendigo</span>
       <span class="format-tag">HSBC</span>
-      <span class="format-tag">Most CSV exports</span>
+      <span class="format-tag">Wise</span>
+      <span class="format-tag">& more</span>
     </div>
   </div>
 
