@@ -192,6 +192,7 @@
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
     z-index: 200; display: none; align-items: flex-end;
     backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    touch-action: none;
   }
   .sheet-overlay.open { display: flex; }
   .sheet {
@@ -199,7 +200,11 @@
     border-top: 0.5px solid var(--border2);
     padding: 12px 20px calc(24px + var(--safe));
     width: 100%; max-height: 85vh; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
   }
+  body.sheet-open { overflow: hidden; position: fixed; width: 100%; }
   .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--bg4); margin: 0 auto 20px; }
   .sheet-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
 
@@ -483,8 +488,8 @@
   </div>
 
   <div class="period-tabs">
-    <div class="period-tab active" onclick="setPeriod('custom',this)">Custom</div>
-    <div class="period-tab" onclick="setPeriod('month',this)">Month</div>
+    <div class="period-tab" onclick="setPeriod('custom',this)">Custom</div>
+    <div class="period-tab active" onclick="setPeriod('month',this)">Month</div>
     <div class="period-tab" onclick="setPeriod('year',this)">Year</div>
     <div class="period-tab" onclick="setPeriod('all',this)">All time</div>
   </div>
@@ -1835,10 +1840,55 @@ function showPage(name, btn) {
   if (btn) btn.classList.add('active');
   if (name === 'settings') renderSettings();
   if (name === 'analytics') setTimeout(renderAnalytics, 50);
+  if (name === 'dashboard') restorePeriodState();
 }
 
-// ─── PERIOD ───────────────────────────────────────────────────────────────────
-let currentPeriod = 'custom';
+function openSheet(id) {
+  document.getElementById(id).classList.add('open');
+  document.body.classList.add('sheet-open');
+}
+
+function closeSheet(id) {
+  document.getElementById(id).classList.remove('open');
+  if (!document.querySelector('.sheet-overlay.open')) {
+    document.body.classList.remove('sheet-open');
+  }
+}
+
+function restorePeriodState() {
+  // Restore the active tab
+  document.querySelectorAll('.period-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('onclick') === `setPeriod('${currentPeriod}',this)`);
+  });
+
+  // Restore the correct picker visibility
+  const monthWrap = document.getElementById('monthPickerWrap');
+  const customWrap = document.getElementById('customPickerWrap');
+
+  if (currentPeriod === 'month') {
+    monthWrap.style.display = '';
+    customWrap.style.display = 'none';
+    // Make sure selectedMonth is set
+    if (!selectedMonth && DB.transactions.length) {
+      const monthSet = new Set(DB.transactions.map(t => t.date.substring(0, 7)));
+      selectedMonth = [...monthSet].sort().reverse()[0];
+    }
+    renderMonthPicker();
+  } else if (currentPeriod === 'custom') {
+    customWrap.style.display = 'flex';
+    monthWrap.style.display = 'none';
+    if (customDateFrom) document.getElementById('customDateFrom').value = customDateFrom;
+    if (customDateTo) document.getElementById('customDateTo').value = customDateTo;
+  } else {
+    monthWrap.style.display = 'none';
+    customWrap.style.display = 'none';
+  }
+
+  renderDashboard();
+}
+
+
+let currentPeriod = 'month';
 let selectedMonth = null;
 let customDateFrom = null;
 let customDateTo = null;
@@ -1849,13 +1899,18 @@ function setPeriod(p, btn) {
   btn.classList.add('active');
 
   if (p === 'month') {
-    renderMonthPicker();
     document.getElementById('monthPickerWrap').style.display = '';
     document.getElementById('customPickerWrap').style.display = 'none';
-    selectedMonth = null;
+    // Set selectedMonth to most recent month before rendering
+    if (!selectedMonth && DB.transactions.length) {
+      const monthSet = new Set(DB.transactions.map(t => t.date.substring(0, 7)));
+      selectedMonth = [...monthSet].sort().reverse()[0];
+    }
+    renderMonthPicker();
   } else if (p === 'custom') {
     document.getElementById('customPickerWrap').style.display = 'flex';
     document.getElementById('monthPickerWrap').style.display = 'none';
+    selectedMonth = null;
     initCustomDates();
   } else {
     document.getElementById('monthPickerWrap').style.display = 'none';
@@ -2244,13 +2299,13 @@ function openTxnSheet(id) {
 
   renderCatPicker(t.category);
 
-  document.getElementById('txnSheet').classList.add('open');
+  openSheet('txnSheet');
   setTimeout(() => { document.querySelector('#txnSheet .sheet').scrollTop = 0; }, 50);
 }
 
 function closeTxnSheet(e) {
   if (!e || e.target === document.getElementById('txnSheet')) {
-    document.getElementById('txnSheet').classList.remove('open');
+    closeSheet('txnSheet');
     if (sheetOpenedFromCat) {
       const returnCat = sheetOpenedFromCat;
       sheetOpenedFromCat = null;
@@ -2371,13 +2426,13 @@ function saveCustomCats(obj) {
 
 function openCatMgmt() {
   renderCatMgmtList();
-  document.getElementById('catMgmtSheet').classList.add('open');
+  openSheet('catMgmtSheet');
   setTimeout(() => { document.querySelector('#catMgmtSheet .sheet').scrollTop = 0; }, 50);
 }
 
 function closeCatMgmt(e) {
   if (!e || e.target === document.getElementById('catMgmtSheet')) {
-    document.getElementById('catMgmtSheet').classList.remove('open');
+    closeSheet('catMgmtSheet');
   }
 }
 
@@ -2485,15 +2540,15 @@ function confirmDeleteCat(name) {
     You are about to delete <strong style="color:var(--text);">${name}</strong>.<br>
     This category has <strong style="color:var(--text);">${count} transaction${count !== 1 ? 's' : ''}</strong> in it.
   `;
-  document.getElementById('catMgmtSheet').classList.remove('open');
+  closeSheet('catMgmtSheet');
   setTimeout(() => {
-    document.getElementById('deleteCatSheet').classList.add('open');
+    openSheet('deleteCatSheet');
   }, 200);
 }
 
 function closeDeleteCatSheet(e) {
   if (!e || e.target === document.getElementById('deleteCatSheet')) {
-    document.getElementById('deleteCatSheet').classList.remove('open');
+    closeSheet('deleteCatSheet');
     deleteCatTarget = null;
     // Reopen manage sheet
     setTimeout(() => openCatMgmt(), 200);
@@ -2520,7 +2575,7 @@ function deleteCatAction(action) {
   saveCatOrder(order);
   DB.save();
 
-  document.getElementById('deleteCatSheet').classList.remove('open');
+  closeSheet('deleteCatSheet');
   deleteCatTarget = null;
 
   renderDashboard();
@@ -2679,20 +2734,20 @@ function openCatSheet(cat) {
     </div>`).join('')
   : `<div style="text-align:center; padding: 30px 0; font-size:13px; color:var(--text2);">No transactions in this period</div>`;
 
-  document.getElementById('catSheet').classList.add('open');
+  openSheet('catSheet');
   // Fix 2: always scroll to top when opening
   setTimeout(() => { document.querySelector('#catSheet .sheet').scrollTop = 0; }, 50);
 }
 
 function closeCatSheet(e) {
   if (!e || e.target === document.getElementById('catSheet')) {
-    document.getElementById('catSheet').classList.remove('open');
+    closeSheet('catSheet');
   }
 }
 
 function openTxnSheetFromCat(id) {
   // Remember we came from a cat sheet so we return to it after saving
-  document.getElementById('catSheet').classList.remove('open');
+  closeSheet('catSheet');
   setTimeout(() => {
     openTxnSheet(id);
     sheetOpenedFromCat = currentCatSheet;
@@ -2963,6 +3018,13 @@ function renderAnalytics() {
 
 // ─── INIT ──────────────────────────────────────────────────────────────────────
 initCustomDates();
+// Set latest month as default
+if (DB.transactions.length) {
+  const monthSet = new Set(DB.transactions.map(t => t.date.substring(0, 7)));
+  selectedMonth = [...monthSet].sort().reverse()[0];
+}
+document.getElementById('monthPickerWrap').style.display = '';
+document.getElementById('customPickerWrap').style.display = 'none';
 renderDashboard();
 renderTransactions();
 renderInsights();
