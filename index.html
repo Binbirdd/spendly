@@ -207,7 +207,7 @@
     touch-action: pan-y;
     overscroll-behavior: contain;
   }
-  body.sheet-open { overflow: hidden; position: fixed; width: 100%; }
+  body.sheet-open { overflow: hidden; position: fixed; width: 100%; left: 0; right: 0; }
   .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--bg4); margin: 0 auto 20px; }
   .sheet-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
 
@@ -2057,6 +2057,9 @@ function showPage(name, btn) {
 }
 
 function openSheet(id) {
+  // Save scroll position BEFORE locking body
+  savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.body.style.top = `-${savedScrollY}px`;
   document.getElementById(id).classList.add('open');
   document.body.classList.add('sheet-open');
 }
@@ -2065,6 +2068,8 @@ function closeSheet(id) {
   document.getElementById(id).classList.remove('open');
   if (!document.querySelector('.sheet-overlay.open')) {
     document.body.classList.remove('sheet-open');
+    document.body.style.top = '';
+    window.scrollTo(0, savedScrollY);
   }
 }
 
@@ -3287,12 +3292,6 @@ function openCatSheet(cat) {
 function closeCatSheet(e) {
   if (!e || e.target === document.getElementById('catSheet')) {
     closeSheet('catSheet');
-    // Restore scroll position
-    setTimeout(() => {
-      const page = document.querySelector('#page-dashboard');
-      if (page) page.scrollTop = savedScrollY;
-      else window.scrollTo(0, savedScrollY);
-    }, 50);
   }
 }
 
