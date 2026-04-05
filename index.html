@@ -201,15 +201,37 @@
   .sheet {
     background: var(--bg2); border-radius: 24px 24px 0 0;
     border-top: 0.5px solid var(--border2);
-    padding: 12px 20px calc(24px + var(--safe));
+    padding: 0;
     width: 100%; max-height: 85vh; overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     overscroll-behavior: contain;
   }
+  .sheet-header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg2); border-bottom: 0.5px solid var(--border);
+    padding: 12px 20px 12px;
+    border-radius: 24px 24px 0 0;
+  }
+  .sheet-body {
+    padding: 16px 20px calc(24px + var(--safe));
+  }
   body.sheet-open { overflow: hidden; position: fixed; width: 100%; left: 0; right: 0; }
   .sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--bg4); margin: 0 auto 20px; }
   .sheet-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+  .sheet-close-fab {
+    position: sticky; bottom: calc(16px + var(--safe)); left: 0; right: 0;
+    display: flex; justify-content: center; pointer-events: none;
+    margin-top: 16px;
+  }
+  .sheet-close-fab button {
+    pointer-events: all;
+    background: var(--bg4); border: 0.5px solid var(--border2);
+    color: var(--text2); font-family: var(--font); font-size: 14px; font-weight: 500;
+    padding: 12px 28px; border-radius: 100px; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    touch-action: manipulation;
+  }
 
   /* SELECT */
   .field-label { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -1170,78 +1192,91 @@
 <!-- TRANSACTION DETAIL SHEET -->
 <div class="sheet-overlay" id="txnSheet" onclick="closeTxnSheet(event)">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-      <button onclick="closeTxnSheet()" style="
-        width:36px; height:36px; border-radius:50%; border:0.5px solid var(--border2);
-        background:var(--bg3); color:var(--text2); font-size:18px; cursor:pointer;
-        display:flex; align-items:center; justify-content:center; flex-shrink:0;
-      ">‹</button>
-      <div class="sheet-title" id="sheetMerchant" style="margin-bottom:0;">Merchant</div>
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-      <div>
-        <div style="font-size: 28px; font-weight: 600; letter-spacing: -0.03em;" id="sheetAmount">$0.00</div>
-        <div style="font-size: 13px; color: var(--text2); margin-top: 3px;" id="sheetDate">—</div>
+    <!-- Sticky header -->
+    <div class="sheet-header">
+      <div class="sheet-handle" style="margin-bottom:12px;"></div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button onclick="closeTxnSheet()" style="
+          width:36px; height:36px; border-radius:50%; border:0.5px solid var(--border2);
+          background:var(--bg3); color:var(--text2); font-size:18px; cursor:pointer;
+          display:flex; align-items:center; justify-content:center; flex-shrink:0;
+          touch-action:manipulation;
+        ">‹</button>
+        <div class="sheet-title" id="sheetMerchant" style="margin-bottom:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Merchant</div>
       </div>
-      <div id="sheetIconWrap" style="width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px;"></div>
     </div>
-    <div class="field-label">Category</div>
-    <div id="catPickerList" style="
-      max-height: 220px; overflow-y: auto; border-radius: var(--r);
-      border: 0.5px solid var(--border2); margin-bottom: 16px;
-    "></div>
-    <div style="font-size: 12px; color: var(--text2); margin-bottom: 20px;" id="sheetLearnNote"></div>
-    <button class="btn btn-secondary" onclick="closeTxnSheet()">Done</button>
+    <!-- Scrollable body -->
+    <div class="sheet-body">
+      <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+        <div>
+          <div style="font-size:28px; font-weight:600; letter-spacing:-0.03em;" id="sheetAmount">$0.00</div>
+          <div style="font-size:13px; color:var(--text2); margin-top:3px;" id="sheetDate">—</div>
+        </div>
+        <div id="sheetIconWrap" style="width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:24px;"></div>
+      </div>
+      <div class="field-label">Category</div>
+      <div id="catPickerList" style="
+        max-height:220px; overflow-y:auto; border-radius:var(--r);
+        border:0.5px solid var(--border2); margin-bottom:16px;
+      "></div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:20px;" id="sheetLearnNote"></div>
+      <button class="btn btn-secondary" onclick="closeTxnSheet()" style="touch-action:manipulation;">Done</button>
+    </div>
   </div>
 </div>
 
 <!-- CATEGORY DRILL-DOWN SHEET -->
 <div class="sheet-overlay" id="catSheet" onclick="closeCatSheet(event)">
   <div class="sheet" style="max-height: 90vh;">
-    <div class="sheet-handle"></div>
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
-      <button onclick="closeCatSheet()" style="
-        width:36px; height:36px; border-radius:50%; border:0.5px solid var(--border2);
-        background:var(--bg3); color:var(--text2); font-size:18px; cursor:pointer;
-        display:flex; align-items:center; justify-content:center; flex-shrink:0;
-      ">‹</button>
-      <div id="catSheetIcon" style="width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px;"></div>
-      <div>
-        <div class="sheet-title" id="catSheetTitle" style="margin-bottom:2px;"></div>
-        <div id="catSheetTotal" style="font-size:13px; color:var(--text2);"></div>
-      </div>
-    </div>
-
-    <!-- Budget row -->
-    <div id="catSheetBudgetRow" style="background:var(--bg3); border-radius:12px; padding:12px 14px; margin-bottom:16px;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:10px;">Monthly budget</div>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <div style="position:relative; flex:1;">
-          <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:16px;">$</span>
-          <input id="catBudgetInput" type="text" inputmode="decimal" placeholder="0.00"
-            style="
-              width:100%; padding:12px 12px 12px 28px; border-radius:10px; font-size:16px;
-              background:var(--bg2); border:0.5px solid var(--border2);
-              color:var(--text); font-family:var(--font); outline:none; box-sizing:border-box;
-            ">
-        </div>
-        <button onclick="saveCatBudget()" style="
-          padding:12px 18px; border-radius:10px; border:none;
-          background:var(--accent); color:#0a0a0a; font-family:var(--font);
-          font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0;
-        ">Save</button>
-        <button onclick="clearCatBudget()" style="
-          padding:12px 14px; border-radius:10px; border:0.5px solid rgba(255,107,107,0.4);
-          background:rgba(255,107,107,0.1); color:#ff6b6b; font-family:var(--font);
-          font-size:14px; font-weight:500; cursor:pointer; white-space:nowrap; flex-shrink:0;
+    <!-- Sticky header -->
+    <div class="sheet-header">
+      <div class="sheet-handle" style="margin-bottom:12px;"></div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button onclick="closeCatSheet()" style="
+          width:36px; height:36px; border-radius:50%; border:0.5px solid var(--border2);
+          background:var(--bg3); color:var(--text2); font-size:18px; cursor:pointer;
+          display:flex; align-items:center; justify-content:center; flex-shrink:0;
           touch-action:manipulation;
-        ">Clear</button>
+        ">‹</button>
+        <div id="catSheetIcon" style="width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px;"></div>
+        <div>
+          <div class="sheet-title" id="catSheetTitle" style="margin-bottom:2px;"></div>
+          <div id="catSheetTotal" style="font-size:13px; color:var(--text2);"></div>
+        </div>
       </div>
     </div>
 
-    <div id="catSheetTxns"></div>
-    <div style="height:12px;"></div>
+    <!-- Scrollable body -->
+    <div class="sheet-body">
+      <!-- Budget row -->
+      <div id="catSheetBudgetRow" style="background:var(--bg3); border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+        <div style="font-size:13px; color:var(--text2); margin-bottom:10px;">Monthly budget</div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="position:relative; flex:1;">
+            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:16px;">$</span>
+            <input id="catBudgetInput" type="text" inputmode="decimal" placeholder="0.00"
+              style="
+                width:100%; padding:12px 12px 12px 28px; border-radius:10px; font-size:16px;
+                background:var(--bg2); border:0.5px solid var(--border2);
+                color:var(--text); font-family:var(--font); outline:none; box-sizing:border-box;
+              ">
+          </div>
+          <button onclick="saveCatBudget()" style="
+            padding:12px 18px; border-radius:10px; border:none;
+            background:var(--accent); color:#0a0a0a; font-family:var(--font);
+            font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0;
+            touch-action:manipulation;
+          ">Save</button>
+          <button onclick="clearCatBudget()" style="
+            padding:12px 14px; border-radius:10px; border:0.5px solid rgba(255,107,107,0.4);
+            background:rgba(255,107,107,0.1); color:#ff6b6b; font-family:var(--font);
+            font-size:14px; font-weight:500; cursor:pointer; white-space:nowrap; flex-shrink:0;
+            touch-action:manipulation;
+          ">Clear</button>
+        </div>
+      </div>
+      <div id="catSheetTxns"></div>
+    </div>
   </div>
 </div>
 
@@ -3063,10 +3098,10 @@ function renderFinancialHealth(m) {
     return;
   }
 
-  // ── All-time averages ──
+  // ── All-time averages — exclude Rent and Transfers ──
   const allMonthMap = {};
   DB.transactions.forEach(t => {
-    if (t.category === 'Transfers') return;
+    if (t.category === 'Transfers' || t.category === 'Rent') return;
     const key = t.date.substring(0, 7);
     if (!allMonthMap[key]) allMonthMap[key] = { income: 0, spend: 0 };
     if (t.category === 'Income') allMonthMap[key].income += t.amount;
@@ -3078,10 +3113,9 @@ function renderFinancialHealth(m) {
   const avgSpend   = allMonths.reduce((s, k) => s + allMonthMap[k].spend,  0) / n;
   const avgLeft    = avgIncome - m.repayment - avgSpend;
 
-  // ── This month ──
+  // ── This month — exclude Rent ──
   const now = new Date();
   const thisKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  // Use latest month that has data if current month not uploaded yet
   const latestKey = allMonths.sort().reverse()[0] || thisKey;
   const useKey = allMonthMap[thisKey] ? thisKey : latestKey;
   const thisMonthData = allMonthMap[useKey] || { income: 0, spend: 0 };
@@ -3092,7 +3126,6 @@ function renderFinancialHealth(m) {
   const monthLabel = useKey ? new Date(useKey + '-01').toLocaleString('default', { month: 'long', year: 'numeric' }) : 'This month';
 
   function healthRow(label, income, spend, repayment, leftover) {
-    const isOk = leftover >= 0;
     const colour = leftover > 500 ? '#c8f565' : leftover >= 0 ? '#ffb74d' : '#ff6b6b';
     const icon = leftover > 500 ? '✅' : leftover >= 0 ? '⚠️' : '❌';
     return `
@@ -3119,7 +3152,11 @@ function renderFinancialHealth(m) {
 
   el.innerHTML =
     healthRow(monthLabel, thisIncome, thisSpend, m.repayment, thisLeft) +
-    healthRow('All-time monthly average', avgIncome, avgSpend, m.repayment, avgLeft);
+    healthRow('All-time monthly average', avgIncome, avgSpend, m.repayment, avgLeft) +
+    `<div style="display:flex; align-items:flex-start; gap:8px; padding:10px 12px; background:rgba(200,245,101,0.06); border:0.5px solid rgba(200,245,101,0.15); border-radius:10px; margin-top:4px;">
+      <span style="font-size:14px; flex-shrink:0;">ℹ️</span>
+      <span style="font-size:12px; color:var(--text2); line-height:1.6;">Rent has been excluded from these calculations. As a homeowner your mortgage replaces rent, giving you an accurate picture of your future finances.</span>
+    </div>`;
 }
 
 function renderHouseCosts() {
