@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -1156,21 +1156,21 @@
 
     <div class="field-label">Home loan amount</div>
     <div style="position:relative; margin-bottom:16px;">
-      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:15px;">$</span>
+      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:16px;">$</span>
       <input id="m-balance" type="text" inputmode="decimal" placeholder="0.00" style="
         width:100%; padding:13px 14px 13px 28px; border-radius:var(--r);
         background:var(--bg3); border:0.5px solid var(--border2);
-        color:var(--text); font-family:var(--font); font-size:15px; outline:none; box-sizing:border-box;
+        color:var(--text); font-family:var(--font); font-size:16px; outline:none; box-sizing:border-box;
       ">
     </div>
 
     <div class="field-label">Total redraw balance</div>
     <div style="position:relative; margin-bottom:16px;">
-      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:15px;">$</span>
+      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:16px;">$</span>
       <input id="m-offset" type="text" inputmode="decimal" placeholder="0.00" style="
         width:100%; padding:13px 14px 13px 28px; border-radius:var(--r);
         background:var(--bg3); border:0.5px solid var(--border2);
-        color:var(--text); font-family:var(--font); font-size:15px; outline:none; box-sizing:border-box;
+        color:var(--text); font-family:var(--font); font-size:16px; outline:none; box-sizing:border-box;
       ">
     </div>
 
@@ -1179,17 +1179,17 @@
       <input id="m-rate" type="text" inputmode="decimal" placeholder="6.00" style="
         width:100%; padding:13px 14px; border-radius:var(--r);
         background:var(--bg3); border:0.5px solid var(--border2);
-        color:var(--text); font-family:var(--font); font-size:15px; outline:none; box-sizing:border-box;
+        color:var(--text); font-family:var(--font); font-size:16px; outline:none; box-sizing:border-box;
       ">
     </div>
 
     <div class="field-label">Monthly repayment</div>
     <div style="position:relative; margin-bottom:16px;">
-      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:15px;">$</span>
+      <span style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text2); font-size:16px;">$</span>
       <input id="m-repayment" type="text" inputmode="decimal" placeholder="0.00" style="
         width:100%; padding:13px 14px 13px 28px; border-radius:var(--r);
         background:var(--bg3); border:0.5px solid var(--border2);
-        color:var(--text); font-family:var(--font); font-size:15px; outline:none; box-sizing:border-box;
+        color:var(--text); font-family:var(--font); font-size:16px; outline:none; box-sizing:border-box;
       ">
     </div>
 
@@ -1197,20 +1197,21 @@
     <input id="m-startdate" type="date" style="
       width:100%; padding:13px 14px; border-radius:var(--r); margin-bottom:16px;
       background:var(--bg3); border:0.5px solid var(--border2);
-      color:var(--text); font-family:var(--font); font-size:15px; outline:none; box-sizing:border-box;
+      color:var(--text); font-family:var(--font); font-size:16px; outline:none; box-sizing:border-box;
     ">
 
     <div class="field-label">Loan term (years)</div>
     <input id="m-term" type="text" inputmode="numeric" placeholder="30" style="
       width:100%; padding:13px 14px; border-radius:var(--r); margin-bottom:24px;
       background:var(--bg3); border:0.5px solid var(--border2);
-      color:var(--text); font-family:var(--font); font-size:15px; outline:none; box-sizing:border-box;
+      color:var(--text); font-family:var(--font); font-size:16px; outline:none; box-sizing:border-box;
     ">
 
-    <button onclick="saveMortgage()" style="
+    <button onclick="saveMortgage()" touch-action="manipulation" style="
       width:100%; padding:16px; border-radius:var(--r); border:none;
       background:var(--accent); color:#0a0a0a; font-family:var(--font);
       font-size:16px; font-weight:600; cursor:pointer; margin-bottom:12px;
+      touch-action:manipulation;
     ">Save</button>
 
     <button onclick="disableProperty()" style="
