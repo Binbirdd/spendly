@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -53,7 +53,11 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   button, a, [onclick] { touch-action: manipulation; }
-  html { background: var(--bg); }
+  html {
+    background: var(--bg);
+    height: -webkit-fill-available;
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     font-family: var(--font);
     background: var(--bg);
@@ -75,6 +79,8 @@
     display: flex;
     padding: 10px 0 calc(10px + var(--safe));
     z-index: 100;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
   }
   .nav-btn {
     flex: 1; display: flex; flex-direction: column; align-items: center;
@@ -3217,12 +3223,14 @@ function openMortgageEditor() {
 
 function closeMortgageEditor(e) {
   if (!e || e.target === document.getElementById('mortgageSheet')) {
+    if (document.activeElement) document.activeElement.blur();
     closeSheet('mortgageSheet');
     renderPropertyPage();
   }
 }
 
 function saveMortgage() {
+  if (document.activeElement) document.activeElement.blur();
   const m = loadMortgage() || {};
   m.enabled   = true;
   m.balance   = parseFloat(document.getElementById('m-balance').value.replace(/,/g, ''))   || 0;
